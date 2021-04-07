@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doodler</title>
+    {% load static %}   
+    <link rel="stylesheet" href="{% static '/main/css/index.css' %}">
+</head>
+<body>
+    <div class="container">
+        <h1>Doodler</h1>
+
+        <div id="palette">
+        <button class="blue active" onclick="c.changeColor('blue')"/>
+        <button class="red" onclick="c.changeColor('red')"/>
+        <button class="yellow" onclick="c.changeColor('yellow')"/>
+        <button class="green" onclick="c.changeColor('green')"/>
+        <button class="black" onclick="c.changeColor('black')"/>
+
+
+        </div>
+        <div class="slidecontainer">
+            <input type="range" min="1" max="75" value="5" class="slider" id="brushSize" oninput="c.lineWidth = this.value">
+        </div>
+    </div>
+    <script src="{% static '/main/js/main.js' %}"></script>
+</body>
+</html>

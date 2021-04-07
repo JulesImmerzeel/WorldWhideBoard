@@ -1,0 +1,72 @@
+* {
+    box-sizing: border-box;
+}
+
+.container {
+    margin: auto;
+    width: clamp(16px, 95vw, 700px);
+}
+
+canvas {
+    border: 1px solid red;
+    margin-bottom: 1rem;
+}
+
+/* palette */
+
+#palette {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    justify-content: space-around;
+    width: 100%;
+}
+
+button {
+    padding: 2rem 3rem;
+    border-radius: 20px;
+    outline: none;
+    border: 5px solid transparent;
+    margin-bottom: 1rem;
+
+}
+
+.blue {
+    background-color: blue;
+}
+
+.blue.active {
+    border-bottom: 5px solid darkblue;
+}
+
+.red {
+    background-color:red;
+}
+
+.red.active {
+    border-bottom: 5px solid darkred;
+}
+
+.yellow {
+    background-color: yellow;
+}
+
+.yellow.active {
+    border-bottom: 5px solid yellowgreen;
+}
+
+.green {
+    background-color: green;
+}
+
+.green.active {
+    border-bottom: 5px solid darkgreen;
+}
+
+.black {
+    background-color: black;
+}
+
+.black.active {
+    border-bottom: 5px solid darkblue;
+}
