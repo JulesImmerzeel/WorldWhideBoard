@@ -144,7 +144,7 @@ class socket
 {
     constructor (canvas)
     {
-        this.socket = new WebSocket('ws://192.168.2.22:8000/');
+        this.socket = new WebSocket(`ws://${window.location.host}`);
         this.canvas = canvas;
 
         this.socket.onmessage = function (e) {
