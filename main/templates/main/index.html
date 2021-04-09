@@ -4,13 +4,26 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Doodler</title>
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K1T5T7D0XL"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-K1T5T7D0XL');
+    </script>
+    <title>World whide board</title>
     {% load static %}   
     <link rel="stylesheet" href="{% static '/main/css/index.css' %}">
 </head>
 <body>
     <div class="container">
-        <h1>Doodler</h1>
+        <h1>World whide board</h1>
+        <p>By Jules Immerzeel</p>
+        <p>Subscribe to my <a href="https://www.youtube.com/channel/UCVB5_jxSqSLNyg-uwqqPnUQ/featured?sub_confirmation=1">youtube channel</a> if you would like me to do a tutorial :)</p>
+
 
         <div id="palette">
         <button class="blue active" onclick="c.changeColor('blue')"/>
