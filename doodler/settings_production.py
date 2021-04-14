@@ -25,7 +25,7 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'z06o6jifmfxj@u4i!1ardq1vu+t4n2
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['julesimmerzeel.com', '192.168.2.19']
+ALLOWED_HOSTS = ['julesimmerzeel.com', '192.168.2.19', '127.0.0.1']
 
 
 # Application definition
@@ -72,6 +72,14 @@ TEMPLATES = [
 WSGI_APPLICATION = 'doodler.wsgi.application'
 ASGI_APPLICATION = "doodler.asgi.application"
 
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
@@ -116,9 +124,9 @@ USE_L10N = True
 
 USE_TZ = True
 
-SECURE_SSL_REDIRECT = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+SECURE_SSL_REDIRECT = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
 
 
 

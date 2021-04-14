@@ -14,6 +14,6 @@ RUN pip install -r requirements.txt
 COPY . .
 
 # 8000 for the server 6379 for the redis server
-EXPOSE 8000 6379
+EXPOSE 8000
 
 CMD ["python3", "manage.py", "runserver"]
