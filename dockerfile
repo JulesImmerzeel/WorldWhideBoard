@@ -1,18 +1,15 @@
-FROM python:latest-alpine
-FROM nginx:latest
-FROM redis:latest
-
+FROM python:3.8-buster
+ENV PYTHONUNBUFFERED=1
 RUN mkdir /src
 
 WORKDIR /src
 
 COPY requirements.txt .
 
-RUN pip install -r requirements.txt 
-
+RUN pip install -r requirements.txt
 
 COPY . .
-
+RUN chmod +x manage.py
 # 8000 for the server 6379 for the redis server
 EXPOSE 8000
 
