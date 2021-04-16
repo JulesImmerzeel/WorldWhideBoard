@@ -13,4 +13,5 @@ RUN chmod +x manage.py
 # 8888 for the server 6379 for the redis server
 EXPOSE 8888
 
-CMD ["python3", "manage.py", "runserver", "0.0.0.0:8888"]
+# CMD ["python3", "manage.py", "runserver", "0.0.0.0:8888"]
+CMD ["daphne", "-b", "0.0.0.0" "-p" "8888" "--ws-protocol", "'graphql-ws'", "--proxy-headers doodler.asgi:application"]
