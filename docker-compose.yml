@@ -1,0 +1,14 @@
+version: "3.3"
+
+services: 
+  redis:
+    image: redis:5
+    restart: always
+    ports: "6379:6379"
+
+  doodler:
+    depends_on:
+      -redis
+    image: 
+    restart: always
+    ports:  "8888:8888"
