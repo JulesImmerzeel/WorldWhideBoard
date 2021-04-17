@@ -78,7 +78,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
+            "hosts": [('redis', 6379)],
         },
     },
 }
@@ -126,9 +126,9 @@ USE_L10N = True
 
 USE_TZ = True
 
-SECURE_SSL_REDIRECT = False
-SESSION_COOKIE_SECURE = False
-CSRF_COOKIE_SECURE = False
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 
 
 
