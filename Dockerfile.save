@@ -1,0 +1,15 @@
+FROM python:3.8-buster
+ENV PYTHONUNBUFFERED=1
+RUN mkdir /src
+
+WORKDIR /src
+
+COPY requirements.txt .
+
+RUN pip install -r requirements.tx
+COPY . .
+# 8888 for the server 6379 for the redis server
+EXPOSE 8888
+
+CMD ["python3", "manage.py", "runserver", "0.0.0.0:8888"]
+#CMD ["daphne", "-b", "0.0.0.0" "-p" "8888" "--ws-protocol", "'graphql-ws'", "--proxy-headers doodler.asgi:application"]
