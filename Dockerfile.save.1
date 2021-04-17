@@ -1,3 +1,4 @@
+
 FROM python:3.8-buster
 ENV PYTHONUNBUFFERED=1
 
@@ -11,4 +12,4 @@ COPY . .
 # 8888 for the server 6379 for the redis server
 EXPOSE 8888
 
-CMD ["daphne", "-b", "0.0.0.0", "-p", "8888", "--ws-protocol", "--proxy-headers", "doodler.asgi:application"]
+CMD ["daphne", "-b", "0.0.0.0", "-p", "8888", "--ws-protocol", " --proxy-headers, doodler.asgi:application"]

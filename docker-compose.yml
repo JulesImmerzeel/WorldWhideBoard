@@ -4,11 +4,13 @@ services:
   redis:
     image: redis:5
     restart: always
-    ports: "6379:6379"
+    ports: 
+      - "6379:6379"
 
   doodler:
     depends_on:
-      -redis
-    image: 
+      - "redis"
+    build: . 
     restart: always
-    ports:  "8888:8888"
+    ports:
+      - "8888:8888"
