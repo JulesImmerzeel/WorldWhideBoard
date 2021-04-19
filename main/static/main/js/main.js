@@ -29,6 +29,9 @@ class canvas
         this.lineWidth = document.getElementById("brushSize").value;
 
         this.resizing = false;
+        
+        // This array stores coords for lines which should be drawn from 1 point to another.
+        this.lines = [];
 
         // EVENTS
         // -------------------------------------
@@ -100,6 +103,7 @@ class canvas
         })(this), false);
     }
 
+    // this draw is used by the user to draw on visible canvas
     draw()
     {
         this.ctx.lineCap = "round";
@@ -116,14 +120,20 @@ class canvas
         this.virtualCtx.lineCap = "round";
         this.virtualCtx.strokeStyle = this.color;
         this.virtualCtx.lineWidth = this.lineWidth;
-
+        let scaleFactor = 700 / this.canvas.width;
         // Set the scaling (for the difference in size between the virtual and actual canvas)
-        this.virtualCtx.scale(700 / this.canvas.width, 700/this.canvas.width);
+        this.virtualCtx.scale(scaleFactor, scaleFactor);
 
         this.virtualCtx.beginPath();
         this.virtualCtx.moveTo(this.prev.x, this.prev.y);
         this.virtualCtx.lineTo(this.curr.x, this.curr.y);
         this.virtualCtx.stroke();
+
+        let line = {
+            prev: {x:scaleFactor * this.prev.x, y:scaleFactor * this.prev.y},
+            curr: {x:scaleFactor * this.curr.x, y:scaleFactor * this.curr.y}
+        }
+        this.lines.push(line);
         // reset the scaling to 1
         c.virtualCtx.scale(c.canvas.width / 700, c.canvas.width/700);
 
@@ -138,24 +148,54 @@ class canvas
         this.color = color;
         document.getElementsByClassName(color)[0].classList.add("active");
     }
+    
+    // draws lines from other clients
+    drawExternal(from, to, color, lineWidth)
+    {
+        this.virtualCtx.beginPath();
+        this.virtualCtx.strokeStyle = color;
+        this.virtualCtx.lineWidth = lineWidth;
+        this.virtualCtx.lineCap = "round";
+        this.virtualCtx.moveTo(from.x, from.y);
+        this.virtualCtx.lineTo(to.x, to.y);
+        this.virtualCtx.stroke();
+
+        
+    }
 }
 
 class socket
 {
     constructor (canvas)
     {
-        this.socket = new WebSocket(`wss://${window.location.host}`);
+        this.socket = new WebSocket(`ws://${window.location.host}`);
         this.canvas = canvas;
+        this.currOnline = null;
 
-        this.socket.onmessage = function (e) {
+        this.socket.onmessage = (e) => ((s) => {
             const data = JSON.parse(e.data);
-            let img =  new Image();
-            img.src = `data:image/png;base64,${data.centralCanvas}`;
-            img.onload = () => {
-                canvas.virtualCtx.drawImage(img, 0, 0, 700, 700)
-                canvas.ctx.drawImage(canvas.virtualCanvas, 0, 0, canvas.canvas.width, canvas.canvas.height)
-            };
-        }
+            console.log(data);
+            s.currOnline = data.currOnline;
+            if (data.lines != undefined)
+            {
+                let lines = data.lines;
+                for (let i = 0; i < lines.length; i++)
+                {
+                    s.canvas.drawExternal(lines[i].prev, lines[i].curr, data.color, data.lineWidth);
+                }
+                console.log(data)
+            }
+
+            else
+            {
+                let img =  new Image();
+                img.src = `data:image/png;base64,${data.centralCanvas}`;
+                img.onload = () => {
+                    canvas.virtualCtx.drawImage(img, 0, 0, 700, 700)
+                    canvas.ctx.drawImage(canvas.virtualCanvas, 0, 0, canvas.canvas.width, canvas.canvas.height)
+                };
+            }
+        })(this)
 
         this.socket.onclose = function(e) {
             console.error('socket closed unexpectedly');
@@ -163,9 +203,30 @@ class socket
  
     }
 
-    send()
+    _sendCanvas()
     {
         this.socket.send(this.canvas.virtualCanvas.toDataURL());
+        console.log('sending canvas');
+    }
+
+    _sendLines()
+    {
+        this.socket.send(JSON.stringify({lines: this.canvas.lines, color: this.canvas.color, lineWidth:this.canvas.lineWidth}));
+        this.canvas.lines = [];
+        console.log('sending lines');
+    }
+
+    send()
+    {
+        if (this.currOnline > 1)
+        {
+            this._sendLines();
+        }
+        else
+        {
+            console.log(this.currOnline)
+            this._sendCanvas();
+        }
     }
 
 }

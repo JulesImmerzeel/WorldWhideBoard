@@ -21,7 +21,8 @@ class CanvasConsumer(WebsocketConsumer):
             encoded_string = base64.b64encode(image_file.read())
 
         self.send(text_data=json.dumps({
-            'centralCanvas': encoded_string.decode("utf-8") 
+            'centralCanvas': encoded_string.decode("utf-8"),
+            'currOnline': len(self.channel_layer.groups.get(self.room_group_name, {}).items())
         }))
 
     def disconnect(self, close_code):
@@ -31,27 +32,57 @@ class CanvasConsumer(WebsocketConsumer):
         )
 
     def receive(self, text_data):
-        canvas = Image.open("art.png")
-        input_canvas = Image.open(BytesIO(base64.b64decode(text_data[22:])))
+        # drawlines stuff
+        if len(self.channel_layer.groups.get(self.room_group_name, {}).items()) > 1:
+            data = json.loads(text_data)
+            
+            # Send message to room group
+            async_to_sync(self.channel_layer.group_send)(
+                self.room_group_name,
+                {
+                    'type': 'lines',
+                    'lines': data['lines'],
+                    'color': data['color'],
+                    'lineWidth': data['lineWidth'],
+                    'sender_channel_name': self.channel_name
+                }
+            )
 
-        canvas.paste(input_canvas, (0,0), input_canvas)
-        canvas.save("art.png")
 
-        with open("art.png", "rb") as image_file:
-            encoded_string = base64.b64encode(image_file.read())
+        # draw canvas stuff
+        else:
+            canvas = Image.open("art.png")
+            input_canvas = Image.open(BytesIO(base64.b64decode(text_data[22:])))
 
-        # Send message to room group
-        async_to_sync(self.channel_layer.group_send)(
-            self.room_group_name,
-            {
-                'type': 'chat_message',
-                'message': encoded_string.decode(),
-                'sender_channel_name': self.channel_name
-            }
-        )
+            canvas.paste(input_canvas, (0,0), input_canvas)
+            canvas.save("art.png")
 
-    # Receive message from room group
-    def chat_message(self, event):
+            with open("art.png", "rb") as image_file:
+                encoded_string = base64.b64encode(image_file.read())
+
+            # Send message to room group
+            async_to_sync(self.channel_layer.group_send)(
+                self.room_group_name,
+                {
+                    'type': 'canvas',
+                    'message': encoded_string.decode(),
+                    'sender_channel_name': self.channel_name
+                }
+            )
+
+    # Receive message from room group (other users)
+    def canvas(self, event):
+        # avoid sending message to the client that send it
         if event['sender_channel_name'] != self.channel_name:
-            # Send message to WebSocket
-            self.send(text_data=json.dumps({ 'centralCanvas' : event['message'] }))
+            # Send canvas to WebSocket
+            self.send(text_data=json.dumps({
+                'centralCanvas' : event['message'],
+                'currOnline': len(self.channel_layer.groups.get(self.room_group_name, {}).items()) }))
+
+    def lines(self, event):
+        if event['sender_channel_name'] != self.channel_name:
+            self.send(text_data=json.dumps({
+                'lines' : event['lines'],
+                'currOnline': len(self.channel_layer.groups.get(self.room_group_name, {}).items()),
+                'color': event['color'],
+                'lineWidth': event['lineWidth']}))
