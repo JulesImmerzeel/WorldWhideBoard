@@ -17,7 +17,7 @@ class canvas
         this.virtualCanvas.width = 700;
         this.virtualCanvas.height = 700;
         this.virtualCtx = this.virtualCanvas.getContext("2d");
-
+        container.insertBefore(this.virtualCanvas, document.getElementById('palette'));
         this.drawing = false;
 
         this.prev = { x: 0, y: 0 };
@@ -30,9 +30,14 @@ class canvas
 
         this.resizing = false;
         
-        // This array stores coords for lines which should be drawn from 1 point to another.
-        this.lines = [];
+        // This array stores lines that need to be send to other clients
+        this.outgoingLines = [];
 
+        // Queues of incoming changes as well as changes made by this user.
+        // Because there can only be 1 line drawn at a time we need to alternate when incoming requests and ownlines need to be drawn
+        this.incomingLines = [];
+        this.ownlines = [];
+        this.selectOwn = true;
         // EVENTS
         // -------------------------------------
         // Touch events
@@ -52,7 +57,11 @@ class canvas
             let rect = c.canvas.getBoundingClientRect();
             c.curr.x = e.touches[0].clientX - rect.left;
             c.curr.y = e.touches[0].clientY - rect.top;
-
+            c.ownlines.push({prev:{x:c.prev.x, y:c.prev.y}, curr:{x:c.curr.x, y:c.curr.y}, color:c.color, lineWidth: c.lineWidth});
+            let scalingFactor = 700 / c.canvas.width
+            c.outgoingLines.push({prev:{x:c.prev.x * scalingFactor, y:c.prev.y * scalingFactor}, curr:{x:c.curr.x * scalingFactor, y:c.curr.y * scalingFactor}, color:c.color, lineWidth: c.lineWidth});
+            c.prev.x = c.curr.x;
+            c.prev.y = c.curr.y;
             c.draw();            
         })(this), false);
 
@@ -79,8 +88,12 @@ class canvas
                 let rect = c.canvas.getBoundingClientRect();
                 c.curr.x = e.clientX - rect.left;
                 c.curr.y = e.clientY - rect.top;
-    
-                c.draw(); 
+                c.ownlines.push({prev:{x:c.prev.x, y:c.prev.y}, curr:{x:c.curr.x, y:c.curr.y}, color:c.color, lineWidth: c.lineWidth})
+                let scalingFactor = 700 / c.canvas.width
+                c.outgoingLines.push({prev:{x:c.prev.x * scalingFactor, y:c.prev.y * scalingFactor}, curr:{x:c.curr.x * scalingFactor, y:c.curr.y * scalingFactor}, color:c.color, lineWidth: c.lineWidth});
+                c.prev.x = c.curr.x;
+                c.prev.y = c.curr.y;
+                this.draw();
             }           
         })(this), false);
 
@@ -103,45 +116,6 @@ class canvas
         })(this), false);
     }
 
-    // this draw is used by the user to draw on visible canvas
-    draw()
-    {
-        this.ctx.lineCap = "round";
-        this.ctx.strokeStyle = this.color;
-        this.ctx.lineWidth = this.lineWidth;
-        
-        this.ctx.beginPath();
-        this.ctx.moveTo(this.prev.x, this.prev.y);
-        this.ctx.lineTo(this.curr.x, this.curr.y);
-        this.ctx.stroke();
-
-
-        // Virtual ctx
-        this.virtualCtx.lineCap = "round";
-        this.virtualCtx.strokeStyle = this.color;
-        this.virtualCtx.lineWidth = this.lineWidth;
-        let scaleFactor = 700 / this.canvas.width;
-        // Set the scaling (for the difference in size between the virtual and actual canvas)
-        this.virtualCtx.scale(scaleFactor, scaleFactor);
-
-        this.virtualCtx.beginPath();
-        this.virtualCtx.moveTo(this.prev.x, this.prev.y);
-        this.virtualCtx.lineTo(this.curr.x, this.curr.y);
-        this.virtualCtx.stroke();
-
-        let line = {
-            prev: {x:scaleFactor * this.prev.x, y:scaleFactor * this.prev.y},
-            curr: {x:scaleFactor * this.curr.x, y:scaleFactor * this.curr.y}
-        }
-        this.lines.push(line);
-        // reset the scaling to 1
-        c.virtualCtx.scale(c.canvas.width / 700, c.canvas.width/700);
-
-        // update coords
-        this.prev.x = this.curr.x;
-        this.prev.y = this.curr.y;
-    }
-
     changeColor(color)
     {
         document.getElementsByClassName(this.color)[0].classList.remove("active");
@@ -149,18 +123,75 @@ class canvas
         document.getElementsByClassName(color)[0].classList.add("active");
     }
     
-    // draws lines from other clients
-    drawExternal(from, to, color, lineWidth)
+    // draws lines from incomingList
+    drawIncoming(line)
     {
         this.virtualCtx.beginPath();
-        this.virtualCtx.strokeStyle = color;
-        this.virtualCtx.lineWidth = lineWidth;
+        this.virtualCtx.strokeStyle = line.color;
+        this.virtualCtx.lineWidth = line.lineWidth;
         this.virtualCtx.lineCap = "round";
-        this.virtualCtx.moveTo(from.x, from.y);
-        this.virtualCtx.lineTo(to.x, to.y);
+        this.virtualCtx.moveTo(line.prev.x, line.prev.y);
+        this.virtualCtx.lineTo(line.curr.x, line.curr.y);
         this.virtualCtx.stroke();
-
         
+        this.ctx.scale(this.canvas.width / 700, this.canvas.width / 700);
+        this.ctx.beginPath();
+        this.ctx.strokeStyle = line.color;
+        this.ctx.lineWidth = line.lineWidth;
+        this.ctx.lineCap = "round";
+        this.ctx.moveTo(line.prev.x, line.prev.y);
+        this.ctx.lineTo(line.curr.x, line.curr.y);
+        this.ctx.stroke();
+
+        // reset the scaling to 1
+        c.ctx.scale(700 / c.canvas.width, 700 / c.canvas.width);
+    }
+
+    drawOwn(line)
+    {   
+        this.ctx.beginPath();
+        this.ctx.strokeStyle = line.color;
+        this.ctx.lineWidth = line.lineWidth;
+        this.ctx.lineCap = "round";
+        this.ctx.moveTo(line.prev.x, line.prev.y);
+        this.ctx.lineTo(line.curr.x, line.curr.y);
+        this.ctx.stroke();
+
+        this.virtualCtx.scale(700 / this.canvas.width, 700 / this.canvas.width);
+        this.virtualCtx.beginPath();
+        this.virtualCtx.strokeStyle = line.color;
+        this.virtualCtx.lineWidth = line.lineWidth;
+        this.virtualCtx.lineCap = "round";
+        this.virtualCtx.moveTo(line.prev.x, line.prev.y);
+        this.virtualCtx.lineTo(line.curr.x, line.curr.y);
+        this.virtualCtx.stroke();
+        // reset the scaling to 1
+        c.virtualCtx.scale(c.canvas.width / 700, c.canvas.width/700);
+    }
+
+    // alternates between the two draws
+    draw()
+    {
+        if (this.ownlines.length == 0)
+        {
+            this.drawIncoming(this.incomingLines.shift());
+        }
+        else if (this.incomingLines == 0)
+        {
+            this.drawOwn(this.ownlines.shift());
+        }
+        else {
+            if (this.selectOwn)
+            {
+                this.selectOwn = false
+                this.drawOwn(this.ownlines.shift());
+            }
+            else
+            {
+                this.selectOwn = true;
+                this.drawIncoming(this.incomingLines.shift());
+            }
+        }
     }
 }
 
@@ -174,16 +205,25 @@ class socket
 
         this.socket.onmessage = (e) => ((s) => {
             const data = JSON.parse(e.data);
-            console.log(data);
-            s.currOnline = data.currOnline;
-            if (data.lines != undefined)
+            this.currOnline = data.currOnline;
+            document.getElementById("counter").innerText = `Currently online: ${this.currOnline}`
+            // If it's not the entire canvas being send
+            if (data.type == 'lines')
             {
-                let lines = data.lines;
-                for (let i = 0; i < lines.length; i++)
+                let lines = data.lines
+                for(let i = 0; i < lines.length; i++)
                 {
-                    s.canvas.drawExternal(lines[i].prev, lines[i].curr, data.color, data.lineWidth);
+                    s.canvas.incomingLines.push({prev:lines[i].prev, curr:lines[i].curr, color:data.color, lineWidth:data.lineWidth})
                 }
-                console.log(data)
+                while (s.canvas.incomingLines.length > 0) {
+                    s.canvas.draw();
+                }
+            }
+
+            // If someone just left need to send canvas incase current client also leave
+            else if (data.type == 'counter' && this.currOnline == 1)
+            {
+                this.send();
             }
 
             else
@@ -211,8 +251,8 @@ class socket
 
     _sendLines()
     {
-        this.socket.send(JSON.stringify({lines: this.canvas.lines, color: this.canvas.color, lineWidth:this.canvas.lineWidth}));
-        this.canvas.lines = [];
+        this.socket.send(JSON.stringify({lines: this.canvas.outgoingLines, color: this.canvas.color, lineWidth:this.canvas.lineWidth}));
+        this.canvas.outgoingLines = [];
         console.log('sending lines');
     }
 
@@ -224,7 +264,6 @@ class socket
         }
         else
         {
-            console.log(this.currOnline)
             this._sendCanvas();
         }
     }

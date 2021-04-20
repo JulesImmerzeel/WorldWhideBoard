@@ -25,7 +25,25 @@ class CanvasConsumer(WebsocketConsumer):
             'currOnline': len(self.channel_layer.groups.get(self.room_group_name, {}).items())
         }))
 
+        # Send message to room group
+        async_to_sync(self.channel_layer.group_send)(
+            self.room_group_name,
+            {
+                'type': 'counter',
+                'count': len(self.channel_layer.groups.get(self.room_group_name, {}).items()),
+                'sender_channel_name': self.channel_name
+            }
+        )
+
     def disconnect(self, close_code):
+        async_to_sync(self.channel_layer.group_send)(
+            self.room_group_name,
+            {
+                'type': 'counter',
+                'sender_channel_name': self.channel_name,
+                'count': len(self.channel_layer.groups.get(self.room_group_name, {}).items()) - 1
+            }
+        )
         async_to_sync(self.channel_layer.group_discard)(
             self.room_group_name,
             self.channel_name
@@ -76,13 +94,19 @@ class CanvasConsumer(WebsocketConsumer):
         if event['sender_channel_name'] != self.channel_name:
             # Send canvas to WebSocket
             self.send(text_data=json.dumps({
+                'type': event['type'],
                 'centralCanvas' : event['message'],
                 'currOnline': len(self.channel_layer.groups.get(self.room_group_name, {}).items()) }))
 
     def lines(self, event):
         if event['sender_channel_name'] != self.channel_name:
             self.send(text_data=json.dumps({
+                'type': event['type'],
                 'lines' : event['lines'],
                 'currOnline': len(self.channel_layer.groups.get(self.room_group_name, {}).items()),
                 'color': event['color'],
                 'lineWidth': event['lineWidth']}))
+
+    def counter(self,event):
+        if event['sender_channel_name'] != self.channel_name:
+            self.send(text_data=json.dumps({'type': event['type'],'currOnline': event['count']}))
