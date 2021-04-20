@@ -27,7 +27,8 @@ DEBUG =  True
 
 ALLOWED_HOSTS = ['*']
 
-
+import mimetypes
+mimetypes.add_type("application/javascript", ".js", True)
 # Application definition
 
 INSTALLED_APPS = [
