@@ -17,6 +17,10 @@ class CanvasConsumer(WebsocketConsumer):
         )
         self.accept()
 
+        # This guy needs to send a new update to the server
+        # messenger = next(iter(self.channel_layer.groups.get(self.room_group_name, {}).values()))
+        # messenger.send()
+
         with open("art.png", "rb") as image_file:
             encoded_string = base64.b64encode(image_file.read())
 
@@ -110,3 +114,6 @@ class CanvasConsumer(WebsocketConsumer):
     def counter(self,event):
         if event['sender_channel_name'] != self.channel_name:
             self.send(text_data=json.dumps({'type': event['type'],'currOnline': event['count']}))
+
+    def update(self, event):
+        pass

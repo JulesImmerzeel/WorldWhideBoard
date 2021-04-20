@@ -17,7 +17,6 @@ class canvas
         this.virtualCanvas.width = 700;
         this.virtualCanvas.height = 700;
         this.virtualCtx = this.virtualCanvas.getContext("2d");
-        container.insertBefore(this.virtualCanvas, document.getElementById('palette'));
         this.drawing = false;
 
         this.prev = { x: 0, y: 0 };
@@ -28,7 +27,6 @@ class canvas
         this.color = 'blue';
         this.lineWidth = document.getElementById("brushSize").value;
 
-        this.resizing = false;
         
         // This array stores lines that need to be send to other clients
         this.outgoingLines = [];
@@ -203,38 +201,39 @@ class socket
         this.canvas = canvas;
         this.currOnline = null;
 
+        
         this.socket.onmessage = (e) => ((s) => {
             const data = JSON.parse(e.data);
             this.currOnline = data.currOnline;
             document.getElementById("counter").innerText = `Currently online: ${this.currOnline}`
             // If it's not the entire canvas being send
-            if (data.type == 'lines')
+            switch (data.type)
             {
-                let lines = data.lines
-                for(let i = 0; i < lines.length; i++)
-                {
-                    s.canvas.incomingLines.push({prev:lines[i].prev, curr:lines[i].curr, color:data.color, lineWidth:data.lineWidth})
-                }
-                while (s.canvas.incomingLines.length > 0) {
-                    s.canvas.draw();
-                }
-            }
+                case 'lines':
+                    let lines = data.lines
+                    for(let i = 0; i < lines.length; i++)
+                    {
+                        s.canvas.incomingLines.push({prev:lines[i].prev, curr:lines[i].curr, color:data.color, lineWidth:data.lineWidth})
+                    }
+                    while (s.canvas.incomingLines.length > 0) {
+                        s.canvas.draw();
+                    }
 
-            // If someone just left need to send canvas incase current client also leave
-            else if (data.type == 'counter' && this.currOnline == 1)
-            {
-                this.send();
-            }
+                // If someone just left need to send canvas incase current client also leave
+                case 'counter':
+                    if (this.currOnline == 1)
+                    {
+                        this.send();
+                    }
 
-            else
-            {
-                let img =  new Image();
-                img.src = `data:image/png;base64,${data.centralCanvas}`;
-                img.onload = () => {
-                    canvas.virtualCtx.drawImage(img, 0, 0, 700, 700)
-                    canvas.ctx.drawImage(canvas.virtualCanvas, 0, 0, canvas.canvas.width, canvas.canvas.height)
-                };
-            }
+                case 'canvas':
+                    let img =  new Image();
+                    img.src = `data:image/png;base64,${data.centralCanvas}`;
+                    img.onload = () => {
+                        canvas.virtualCtx.drawImage(img, 0, 0, 700, 700)
+                        canvas.ctx.drawImage(canvas.virtualCanvas, 0, 0, canvas.canvas.width, canvas.canvas.height)
+                    };
+                }
         })(this)
 
         this.socket.onclose = function(e) {
@@ -243,32 +242,24 @@ class socket
  
     }
 
-    _sendCanvas()
-    {
-        this.socket.send(this.canvas.virtualCanvas.toDataURL());
-        console.log('sending canvas');
-    }
-
-    _sendLines()
-    {
-        this.socket.send(JSON.stringify({lines: this.canvas.outgoingLines, color: this.canvas.color, lineWidth:this.canvas.lineWidth}));
-        this.canvas.outgoingLines = [];
-        console.log('sending lines');
-    }
-
     send()
     {
+        // send lines
         if (this.currOnline > 1)
         {
-            this._sendLines();
+            this.socket.send(JSON.stringify({lines: this.canvas.outgoingLines, color: this.canvas.color, lineWidth:this.canvas.lineWidth}));
+            this.canvas.outgoingLines = [];
+            console.log('sending lines');
         }
+        // send canvas
         else
         {
-            this._sendCanvas();
+            this.socket.send(this.canvas.virtualCanvas.toDataURL());
+            console.log('sending canvas');
         }
     }
-
 }
+
 let c = new canvas(container);
 let s = new socket(c);
 c.socket = s;
