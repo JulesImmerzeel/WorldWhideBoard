@@ -9,25 +9,28 @@ class socket
         this.socket.onmessage = e => this.messageHandler(e.data);
         this.socket.onopen = e => {
             console.log("Connected to webserver");
-            this.socket.send(JSON.stringify({'type':'p2p request'}))
         }
     }
 
-    messageHandler(data)
+    async messageHandler(data)
     {
         data = JSON.parse(data);
-
         switch (data.type)
         {
             case "sendOffer":
                 console.log("Offer send");
-                this.socket.send(JSON.stringify(pc.createOffer()));
+                const offer = await pc.createOffer();
+                this.socket.send(JSON.stringify({type: 'sendOffer', sdp: offer}));
+                break;
             case "offer":
-                this.socket.send(JSON.stringify(pc.sendAnswer()));
-                console.log("Answer end");
+                let answer = await pc.sendAnswer(data.sdp);
+                this.socket.send(JSON.stringify({'type':'offer', 'anwser':JSON.stringify(answer)}))
+                console.log("Answer send");
+                break;
             case "answer":
-                pc.setAnswer();
+                pc.setAnswer(data.answer);
                 console.log('Answer received');
+                break;
         }
     }
 }
@@ -61,13 +64,13 @@ class peerConnection
         this.dc.onmessage = e => console.log(e.data);
         this.dc.onopen = e => console.log("Connection opened");
         this.pc.createOffer().then( o => this.pc.setLocalDescription(o) )
-        const offer = await this.waitToCompleteIceGathering()
-        return offer;
+        const offer = await this.waitToCompleteIceGathering();
+        return JSON.stringify(offer);
     }
 
     async sendAnswer (sdp)
     {
-        this.pc.setRemoteDescription(sdp);
+        this.pc.setRemoteDescription(JSON.parse(sdp));
         this.pc.createAnswer().then(a => this.pc.setLocalDescription(a));
         const answer = await this.waitToCompleteIceGathering();
         return answer;
@@ -75,7 +78,8 @@ class peerConnection
 
     setAnswer (sdp)
     {
-        this.pc.setRemoteDescription(sdp)
+        this.pc.setRemoteDescription(JSON.parse(sdp));
+        console.log(sdp);
     }
 
     sendData (value)
@@ -85,5 +89,5 @@ class peerConnection
     }
 }
 
-let pc = new peerConnection();
+window.pc = new peerConnection();
 let s = new socket();
