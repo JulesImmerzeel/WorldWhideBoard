@@ -6,7 +6,8 @@ import base64
 from channels.generic.websocket import WebsocketConsumer
 from asgiref.sync import async_to_sync
 
-
+connections = dict()
+counter = 0
 class CanvasConsumer(WebsocketConsumer):
     def connect(self):
         self.room_group_name = 'main'
@@ -17,27 +18,15 @@ class CanvasConsumer(WebsocketConsumer):
         )
         self.accept()
 
-        # This guy needs to send a new update to the server
-        # messenger = next(iter(self.channel_layer.groups.get(self.room_group_name, {}).values()))
-        # messenger.send()
-
-        with open("art.png", "rb") as image_file:
-            encoded_string = base64.b64encode(image_file.read())
-
-        self.send(text_data=json.dumps({
-            'centralCanvas': encoded_string.decode("utf-8"),
-            'currOnline': len(self.channel_layer.groups.get(self.room_group_name, {}).items())
-        }))
-
-        # Send message to room group
-        async_to_sync(self.channel_layer.group_send)(
-            self.room_group_name,
-            {
-                'type': 'counter',
-                'count': len(self.channel_layer.groups.get(self.room_group_name, {}).items()),
-                'sender_channel_name': self.channel_name
-            }
-        )
+        # # Send message to room group
+        # async_to_sync(self.channel_layer.group_send)(
+        #     self.room_group_name,
+        #     {
+        #         'type': 'connection',
+        #         'count': len(self.channel_layer.groups.get(self.room_group_name, {}).items()),
+        #         'sender_channel_name': self.channel_name
+        #     }
+        # )
 
     def disconnect(self, close_code):
         async_to_sync(self.channel_layer.group_send)(
@@ -54,6 +43,11 @@ class CanvasConsumer(WebsocketConsumer):
         )
 
     def receive(self, text_data):
+        if text_data['type'] == 'requestToJoin':
+            connections[counter] = text_data['message']
+
+
+
         # drawlines stuff
         if len(self.channel_layer.groups.get(self.room_group_name, {}).items()) > 1:
             data = json.loads(text_data)
