@@ -27,15 +27,7 @@ class CanvasConsumer(WebsocketConsumer):
         )
 
     def disconnect (self, close_code):
-        async_to_sync(self.channel_layer.group_send)(
-            self.room_group_name,
-            {
-                'type' : 'closePeer',
-                'sender_channel_name' : self.channel_name
-            }
-        )
-
-        # Send message to all group members to close the disconnected peer connection
+        # Remove from consumer layer
         async_to_sync(self.channel_layer.group_discard)(
             self.room_group_name,
             self.channel_name
@@ -103,10 +95,3 @@ class CanvasConsumer(WebsocketConsumer):
                 }))
 
     # After sendAnswer the signaling is done!
-
-    def closePeer (self, event):
-        self.send(text_data=json.dumps(
-            {
-                'type' : 'closePeer',
-                'sender_channel_name' : event['sender_channel_name']
-            }))

@@ -1,4 +1,4 @@
-let peerConnections = {};
+window.peerConnections = {};
 
 class socket
 {
@@ -7,7 +7,6 @@ class socket
         this.socket = new WebSocket(`${window.location.protocol == "https:" ? "wss" : "ws"}://${window.location.host}`);
         this.socket.onmessage = e => this.messageHandler(e.data);
         this.socket.onopen = e => {
-            console.log("Connected to webserver");
         }
     }
 
@@ -20,34 +19,17 @@ class socket
             case "sendOffer":
                 peerConnections[channelName] = new peerConnection();
                 const offer = await peerConnections[channelName].createOffer();
-
                 this.socket.send(JSON.stringify({type: 'sendOffer', sdp: offer, 'sender_channel_name':channelName}));
-                console.log(`Offer send to ${channelName}`);
                 break;
 
             case "offer":
                 peerConnections[channelName] = new peerConnection();
                 let answer = await peerConnections[channelName].sendAnswer(data.sdp);
-                console.log(`channel name = ${channelName}`)
                 this.socket.send(JSON.stringify({'type':'offer', 'sender_channel_name':channelName, 'anwser':JSON.stringify(answer)}))
-                console.log("Answer send");
                 break;
 
             case "answer":
                 peerConnections[channelName].setAnswer(data.answer);
-                console.log('Answer received');
-                break;
-
-            case "closePeer":
-                try {
-
-                    peerConnections[data.sender_channel_name].close();
-                    delete peerConnections[data.sender_channel_name];
-                    console.log("Connection closed");
-                }
-                catch (ReferenceError) {
-                    console.log(`not connected with ${data.sender_channel_name}`);
-                }
         }
     }
 }
@@ -62,9 +44,14 @@ class peerConnection
         this.pc.ondatachannel = e => {
             this.dc = e.channel;
             this.dc.onmessage = e => console.log(e.data);
-            this.dc.onopen = e => console.log("Connection opened");
-        }  
-       
+        }
+
+        this.pc.addEventListener("iceconnectionstatechange", (e) => ((pc) => {
+            if(pc.pc.iceConnectionState == 'disconnected') {
+                delete peerConnections[Object.keys(peerConnections).find(key => peerConnections[key] === pc)]
+            }
+        })(this), false);
+
     }
 
     waitToCompleteIceGathering() {
@@ -73,12 +60,10 @@ class peerConnection
         });
     }
 
-
     async createOffer()
     {
         this.dc = this.pc.createDataChannel("channel");
         this.dc.onmessage = e => console.log(e.data);
-        this.dc.onopen = e => console.log("Connection opened");
         this.pc.createOffer().then( o => this.pc.setLocalDescription(o) )
         const offer = await this.waitToCompleteIceGathering();
         return JSON.stringify(offer);
@@ -95,16 +80,15 @@ class peerConnection
     setAnswer (sdp)
     {
         this.pc.setRemoteDescription(JSON.parse(sdp));
-        console.log(sdp);
-    }
-
-    sendData (value)
-    {
-        this.dc.send(value)
-        console.log('send')
     }
 }
 
-let peers = [];
-window.pc = new peerConnection();
 let s = new socket();
+
+function sendData (value)
+{
+    for (const connection in peerConnections)
+    {
+        peerConnections[connection].dc.send(value);
+    }
+}
