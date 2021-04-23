@@ -1,5 +1,4 @@
-// let peerConnections = null
-
+let peerConnections = {};
 
 class socket
 {
@@ -15,22 +14,40 @@ class socket
     async messageHandler(data)
     {
         data = JSON.parse(data);
+        let channelName = data.sender_channel_name;
         switch (data.type)
         {
             case "sendOffer":
-                console.log("Offer send");
-                const offer = await pc.createOffer();
-                this.socket.send(JSON.stringify({type: 'sendOffer', sdp: offer}));
+                peerConnections[channelName] = new peerConnection();
+                const offer = await peerConnections[channelName].createOffer();
+
+                this.socket.send(JSON.stringify({type: 'sendOffer', sdp: offer, 'sender_channel_name':channelName}));
+                console.log(`Offer send to ${channelName}`);
                 break;
+
             case "offer":
-                let answer = await pc.sendAnswer(data.sdp);
-                this.socket.send(JSON.stringify({'type':'offer', 'anwser':JSON.stringify(answer)}))
+                peerConnections[channelName] = new peerConnection();
+                let answer = await peerConnections[channelName].sendAnswer(data.sdp);
+                console.log(`channel name = ${channelName}`)
+                this.socket.send(JSON.stringify({'type':'offer', 'sender_channel_name':channelName, 'anwser':JSON.stringify(answer)}))
                 console.log("Answer send");
                 break;
+
             case "answer":
-                pc.setAnswer(data.answer);
+                peerConnections[channelName].setAnswer(data.answer);
                 console.log('Answer received');
                 break;
+
+            case "closePeer":
+                try {
+
+                    peerConnections[data.sender_channel_name].close();
+                    delete peerConnections[data.sender_channel_name];
+                    console.log("Connection closed");
+                }
+                catch (ReferenceError) {
+                    console.log(`not connected with ${data.sender_channel_name}`);
+                }
         }
     }
 }
@@ -46,8 +63,7 @@ class peerConnection
             this.dc = e.channel;
             this.dc.onmessage = e => console.log(e.data);
             this.dc.onopen = e => console.log("Connection opened");
-        }
-        
+        }  
        
     }
 
@@ -89,5 +105,6 @@ class peerConnection
     }
 }
 
+let peers = [];
 window.pc = new peerConnection();
 let s = new socket();
