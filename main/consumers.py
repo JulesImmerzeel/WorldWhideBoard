@@ -15,16 +15,20 @@ class CanvasConsumer(WebsocketConsumer):
             self.channel_name
         )
         self.accept()
-
-
-        # Send message to room group requesting THEM to send new consumer offers
-        async_to_sync(self.channel_layer.group_send)(
-            self.room_group_name,
-            {
-                'type' : 'newConnection',
-                'sender_channel_name' : self.channel_name
-            }
-        )
+        print(len(self.channel_layer.groups.get(self.room_group_name, {}).items()))
+        if len(self.channel_layer.groups.get(self.room_group_name, {}).items()) == 1:
+            with open("art.png", "rb") as image_file:
+                encoded_string = base64.b64encode(image_file.read())
+            self.send(text_data=json.dumps({'type': 'canvas', 'canvas': encoded_string.decode("utf-8")}))
+        else:
+            # Send message to room group requesting THEM to send new consumer offers
+            async_to_sync(self.channel_layer.group_send)(
+                self.room_group_name,
+                {
+                    'type' : 'newConnection',
+                    'sender_channel_name' : self.channel_name
+                }
+            )
 
     def disconnect (self, close_code):
         # Remove from consumer layer
@@ -56,7 +60,15 @@ class CanvasConsumer(WebsocketConsumer):
                     'answer' : data['anwser']
                 }
             )
+        elif data['type'] == "canvas":
+            canvas = Image.open("art.png")
+            input_canvas = Image.open(BytesIO(base64.b64decode(data['canvas'][22:])))
 
+            canvas.paste(input_canvas, (0,0), input_canvas)
+            canvas.save("art.png")
+
+            with open("art.png", "rb") as image_file:
+                encoded_string = base64.b64encode(image_file.read())
 
     # -----------|----------------------------------|-------------
     # Functions that handle incoming messages from other sockets

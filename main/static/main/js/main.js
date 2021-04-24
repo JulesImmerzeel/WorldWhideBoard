@@ -8,7 +8,7 @@ class socket
     {
         this.socket = new WebSocket(`${window.location.protocol == "https:" ? "wss" : "ws"}://${window.location.host}`);
         this.socket.onmessage = e => this.messageHandler(e.data);
-        this.socket.onopen = e => {
+        this.socket.onopen = e => { console.log('open')
         }
     }
 
@@ -16,6 +16,7 @@ class socket
     {
         data = JSON.parse(data);
         let channelName = data.sender_channel_name;
+        console.log(data)
         switch (data.type)
         {
             case "sendOffer":
@@ -32,6 +33,16 @@ class socket
 
             case "answer":
                 peerConnections[channelName].setAnswer(data.answer);
+                break;
+            
+            case 'canvas':
+                console.log('canvas time')
+                let img =  new Image();
+                img.src = `data:image/png;base64,${data.canvas}`;
+                img.onload = () => {
+                    c.virtualCtx.drawImage(img, 0, 0, 700, 700)
+                    c.ctx.drawImage(c.virtualCanvas, 0, 0, c.canvas.width, c.canvas.height)
+                };
         }
     }
 }
@@ -109,7 +120,7 @@ class peerConnection
                 break;
 
             case 'canvasRequest':
-                this.dc.send(JSON.stringify({'type': 'canvas', 'canvas': c.canvas.toDataURL()}));
+                this.dc.send(JSON.stringify({'type': 'canvas', 'canvas': c.virtualCanvas.toDataURL()}));
                 break;
 
             case 'canvas':
@@ -121,21 +132,20 @@ class peerConnection
                 };
         }
     }
-
-    sendCanvas ()
-    {
-        c.canvas
-    }
 }
 
 
 function sendData (value)
 {
-    for (const connection in peerConnections)
-    {
-        peerConnections[connection].dc.send(JSON.stringify({"type": "lines", "lines":value}));
+    if (Object.keys(peerConnections).length > 0)
+        for (const connection in peerConnections)
+        {
+            peerConnections[connection].dc.send(JSON.stringify({"type": "lines", "lines":value}));
+        }
+    else {
+        s.socket.send(JSON.stringify({'type': 'canvas', 'canvas': c.virtualCanvas.toDataURL()}));
+        console.log('send canvas via sockets');
     }
-    console.log('send');
 }
 
 let container = document.querySelector('.container');
