@@ -27,16 +27,17 @@ class socket
 
             case "offer":
                 peerConnections[channelName] = new peerConnection();
+                document.getElementById("counter").innerText = `Currently online: ${Object.keys(peerConnections).length + 1}`;
                 let answer = await peerConnections[channelName].sendAnswer(data.sdp);
                 this.socket.send(JSON.stringify({'type':'offer', 'sender_channel_name':channelName, 'anwser':JSON.stringify(answer)}))
                 break;
 
             case "answer":
                 peerConnections[channelName].setAnswer(data.answer);
+                document.getElementById("counter").innerText = `Currently online: ${Object.keys(peerConnections).length + 1}`;
                 break;
             
             case 'canvas':
-                console.log('canvas time')
                 let img =  new Image();
                 img.src = `data:image/png;base64,${data.canvas}`;
                 img.onload = () => {
@@ -68,7 +69,7 @@ class peerConnection
         this.pc.addEventListener("iceconnectionstatechange", (e) => ((pc) => {
             if(pc.pc.iceConnectionState == "disconnected") {
                 delete peerConnections[Object.keys(peerConnections).find(key => peerConnections[key] === pc)];
-                document.getElementById("counter").innerText = `Currently online: ${Object.keys(peerConnections).length}`;
+                document.getElementById("counter").innerText = `Currently online: ${Object.keys(peerConnections).length + 1}`;
             }
         })(this), false);
 
@@ -94,14 +95,12 @@ class peerConnection
         this.pc.setRemoteDescription(JSON.parse(sdp));
         this.pc.createAnswer().then(a => this.pc.setLocalDescription(a));
         const answer = await this.waitToCompleteIceGathering();
-        document.getElementById("counter").innerText = `Currently online: ${Object.keys(peerConnections).length}`;
         return answer;
     }
 
     setAnswer (sdp)
     {
         this.pc.setRemoteDescription(JSON.parse(sdp));
-        document.getElementById("counter").innerText = `Currently online: ${Object.keys(peerConnections).length}`;
     }
 
     messageCallback (data)
@@ -144,7 +143,6 @@ function sendData (value)
         }
     else {
         s.socket.send(JSON.stringify({'type': 'canvas', 'canvas': c.virtualCanvas.toDataURL()}));
-        console.log('send canvas via sockets');
     }
 }
 
