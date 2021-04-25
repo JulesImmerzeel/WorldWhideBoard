@@ -6,6 +6,7 @@ import base64
 from channels.generic.websocket import WebsocketConsumer
 from asgiref.sync import async_to_sync
 
+count = 0
 class CanvasConsumer(WebsocketConsumer):
     def connect (self):
         self.room_group_name = 'main'
@@ -14,9 +15,10 @@ class CanvasConsumer(WebsocketConsumer):
             self.room_group_name,
             self.channel_name
         )
+        global count
+        count += 1
         self.accept()
-        print(len(self.channel_layer.groups.get(self.room_group_name, {}).items()))
-        if len(self.channel_layer.groups.get(self.room_group_name, {}).items()) == 1:
+        if count == 1:
             with open("art.png", "rb") as image_file:
                 encoded_string = base64.b64encode(image_file.read())
             self.send(text_data=json.dumps({'type': 'canvas', 'canvas': encoded_string.decode("utf-8")}))
@@ -36,6 +38,8 @@ class CanvasConsumer(WebsocketConsumer):
             self.room_group_name,
             self.channel_name
         )
+        global count
+        count -= 1
 
     def receive (self, text_data):
         data = json.loads(text_data)
