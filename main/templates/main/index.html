@@ -50,7 +50,7 @@
 
         </div>
         <div class="slidecontainer">
-            <input role="brush size selector" aria-valuemin="1" aria-valuemax="75" aria-valuenow="5" type="range" min="1" max="75" value="5" class="slider" id="brushSize" oninput="c.lineWidth = this.value">
+            <input role="brush size selector" aria-valuemin="1" aria-valuemax="75" aria-valuenow="5" type="range" min="1" max="75" value="5" class="slider" id="brushSize" oninput="c.lineWidth = c.canvas.width / 1000 * this.value">
         </div>
     </main>
     <script type="module" src="{% static '/main/js/main.js' %}"></script>
