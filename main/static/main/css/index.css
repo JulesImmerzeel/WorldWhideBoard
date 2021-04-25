@@ -68,5 +68,13 @@ button {
 }
 
 .black.active {
-    border-bottom: 5px solid darkblue;
+    border-bottom: 5px solid white;
+}
+
+.white {
+    border: 1px solid black;
+}
+
+.white.active {
+    border-bottom: 5px solid black;
 }
