@@ -8,16 +8,13 @@ class socket
     {
         this.socket = new WebSocket(`${window.location.protocol == "https:" ? "wss" : "ws"}://${window.location.host}`);
         this.socket.onmessage = e => this.messageHandler(e.data);
-        this.socket.onopen = e => { console.log('open')
-        }
     }
 
     async messageHandler(data)
     {
         data = JSON.parse(data);
         let channelName = data.sender_channel_name;
-        console.log(data)
-        switch (data.type)
+            switch (data.type)
         {
             case "sendOffer":
                 peerConnections[channelName] = new peerConnection();
