@@ -70,6 +70,10 @@ class peerConnection
             if(pc.pc.iceConnectionState == "disconnected") {
                 delete peerConnections[Object.keys(peerConnections).find(key => peerConnections[key] === pc)];
                 document.getElementById("counter").innerText = `Currently online: ${Object.keys(peerConnections).length + 1}`;
+                if (Object.key(peerConnections).length == 0)
+                {
+                    s.send(c.virtualCanvas.toDataURL());
+                }
             }
         })(this), false);
 
@@ -106,7 +110,7 @@ class peerConnection
     messageCallback (data)
     {
         data = JSON.parse(data);
-
+        console.log(data.lines);
         switch (data.type)
         {
             case 'lines':

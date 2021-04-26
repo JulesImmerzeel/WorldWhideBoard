@@ -56,9 +56,9 @@ class canvas
             let rect = c.canvas.getBoundingClientRect();
             c.curr.x = e.touches[0].clientX - rect.left;
             c.curr.y = e.touches[0].clientY - rect.top;
-            c.ownlines.push({prev:{x:parseInt(c.prev.x), y:parseInt(c.prev.y)}, curr:{x:parseInt(c.curr.x), y:parseInt(c.curr.y)}, color:c.color, lineWidth: c.lineWidth});
+            c.ownlines.push({prev:{x:parseInt(c.prev.x), y:parseInt(c.prev.y)}, curr:{x:parseInt(c.curr.x), y:parseInt(c.curr.y)}, color:c.color, lineWidth: Math.ceil(c.lineWidth)});
             let scalingFactor = 700 / c.canvas.width
-            c.outgoingLines.push({prev:{x:parseInt(c.prev.x * scalingFactor), y:parseInt(c.prev.y * scalingFactor)}, curr:{x:parseInt(c.curr.x * scalingFactor), y:parseInt(c.curr.y * scalingFactor)}, color:c.color, lineWidth: parseInt(c.lineWidth * scalingFactor)});
+            c.outgoingLines.push({prev:{x:parseInt(c.prev.x * scalingFactor), y:parseInt(c.prev.y * scalingFactor)}, curr:{x:parseInt(c.curr.x * scalingFactor), y:parseInt(c.curr.y * scalingFactor)}, color:c.color, lineWidth: Math.ceil(c.lineWidth * scalingFactor)});
             c.prev.x = c.curr.x;
             c.prev.y = c.curr.y;
             c.draw();            
@@ -91,9 +91,9 @@ class canvas
                 let rect = c.canvas.getBoundingClientRect();
                 c.curr.x = e.clientX - rect.left;
                 c.curr.y = e.clientY - rect.top;
-                c.ownlines.push({prev:{x:parseInt(c.prev.x), y:parseInt(c.prev.y)}, curr:{x:parseInt(c.curr.x), y:parseInt(c.curr.y)}, color:c.color, lineWidth: c.lineWidth});
+                c.ownlines.push({prev:{x:parseInt(c.prev.x), y:parseInt(c.prev.y)}, curr:{x:parseInt(c.curr.x), y:parseInt(c.curr.y)}, color:c.color, lineWidth: Math.ceil(c.lineWidth)});
                 let scalingFactor = 700 / c.canvas.width
-                c.outgoingLines.push({prev:{x:parseInt(c.prev.x * scalingFactor), y:parseInt(c.prev.y * scalingFactor)}, curr:{x:parseInt(c.curr.x * scalingFactor), y:parseInt(c.curr.y * scalingFactor)}, color:c.color, lineWidth: parseInt(c.lineWidth * scalingFactor)});
+                c.outgoingLines.push({prev:{x:parseInt(c.prev.x * scalingFactor), y:parseInt(c.prev.y * scalingFactor)}, curr:{x:parseInt(c.curr.x * scalingFactor), y:parseInt(c.curr.y * scalingFactor)}, color:c.color, lineWidth: Math.ceil(c.lineWidth * scalingFactor)});
 
                 c.prev.x = c.curr.x;
                 c.prev.y = c.curr.y;
