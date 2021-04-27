@@ -1,6 +1,6 @@
 import canvas from "./canvas.js";
 
-window.peerConnections = {};
+let peerConnections = {};
 
 class socket
 {
@@ -146,7 +146,7 @@ function sendData (value)
             catch (DOMException)
             {
                 // This when someone refreshes page, but 5 seconds to update didn't pass yet.
-                // Not really a problem
+                // Not really a problem.
             }
         }
     else {
