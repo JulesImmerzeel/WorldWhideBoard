@@ -70,6 +70,7 @@ class CanvasConsumer(WebsocketConsumer):
 
             canvas.paste(input_canvas, (0,0), input_canvas)
             canvas.save("art.png")
+            print('canvas received')
 
             with open("art.png", "rb") as image_file:
                 encoded_string = base64.b64encode(image_file.read())

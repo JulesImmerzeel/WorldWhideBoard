@@ -8,15 +8,12 @@ class socket
     {
         this.socket = new WebSocket(`${window.location.protocol == "https:" ? "wss" : "ws"}://${window.location.host}`);
         this.socket.onmessage = e => this.messageHandler(e.data);
-        this.socket.onopen = e => { console.log('open')
-        }
     }
 
     async messageHandler(data)
     {
         data = JSON.parse(data);
         let channelName = data.sender_channel_name;
-        console.log(data)
         switch (data.type)
         {
             case "sendOffer":
@@ -57,7 +54,7 @@ class peerConnection
         
         this.pc.ondatachannel = e => {
             this.dc = e.channel;
-            if (c.setup == false)
+            (c.setup == false)
             {
                 // Requesting full canvas once then only send lines
                 this.dc.send(JSON.stringify({'type': 'canvasRequest'}));
@@ -70,9 +67,9 @@ class peerConnection
             if(pc.pc.iceConnectionState == "disconnected") {
                 delete peerConnections[Object.keys(peerConnections).find(key => peerConnections[key] === pc)];
                 document.getElementById("counter").innerText = `Currently online: ${Object.keys(peerConnections).length + 1}`;
-                if (Object.key(peerConnections).length == 0)
+                if (Object.keys(peerConnections).length == 0)
                 {
-                    s.send(c.virtualCanvas.toDataURL());
+                    s.socket.send(JSON.stringify({"type":"canvas", "canvas":c.virtualCanvas.toDataURL()}));
                 }
             }
         })(this), false);
@@ -110,7 +107,6 @@ class peerConnection
     messageCallback (data)
     {
         data = JSON.parse(data);
-        console.log(data.lines);
         switch (data.type)
         {
             case 'lines':
@@ -143,7 +139,15 @@ function sendData (value)
     if (Object.keys(peerConnections).length > 0)
         for (const connection in peerConnections)
         {
-            peerConnections[connection].dc.send(JSON.stringify({"type": "lines", "lines":value}));
+            try
+            {
+                peerConnections[connection].dc.send(JSON.stringify({"type": "lines", "lines":value}));
+            }
+            catch (DOMException)
+            {
+                // This when someone refreshes page, but 5 seconds to update didn't pass yet.
+                // Not really a problem
+            }
         }
     else {
         s.socket.send(JSON.stringify({'type': 'canvas', 'canvas': c.virtualCanvas.toDataURL()}));
